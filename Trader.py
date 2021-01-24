@@ -1,3 +1,4 @@
+import datetime
 import json
 import requests
 import numpy as np
@@ -56,7 +57,15 @@ class Trader:
 
 def main():
     trader = Trader("config.json")
-    print(trader.get_account().text)
+    bars = trader.get_mkt_data('AAPL', 1000, '2019-01-01', '1D')
+
+    df = pd.DataFrame.from_dict(bars.json()['AAPL'])
+    df.columns = ['epoch', 'open', 'high', 'low', 'close', 'vol']
+    df.to_csv('test_data_aapl.csv')
+    df['epoch'] = df['epoch'].apply(lambda t: datetime.datetime.fromtimestamp(t))
+    df['avg'] = round((df['high'] + df['low']) / 2, 2)
+    df['vol_diff'] = df['vol'].diff()
+    df.to_csv('test_data_aapl.csv')
 
 
 if __name__ == "__main__":
