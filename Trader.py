@@ -74,9 +74,17 @@ def get_bar_data(tickers):
         df.to_sql(ticker, schema="bar_data", con=conn)
 
 
+def update_positions():
+    trader = Trader("config.json")
+    config = json.load(open("config.json"))
+    df = pd.read_json(trader.get_positions().text)
+
+    conn = sqlalchemy.create_engine(config["db_connection_string"])
+    df.to_sql("open_positions", schema="portfolio", con=conn)
+
+
 def main():
-    tickers = ["TWTR"]
-    get_bar_data(tickers)
+    update_positions()
 
 
 if __name__ == "__main__":
