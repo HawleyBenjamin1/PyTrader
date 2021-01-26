@@ -9,5 +9,6 @@
    "clock_endpoint":"/v2/clock",
    "positions_endpoint":"/v2/positions",
    "base_mkt_data_url":"https://data.alpaca.markets",
-   "bars_endpoint":"/v1/bars"
+   "bars_endpoint":"/v1/bars",
+   "db_connection_string": "postgresql://postgres@192.168.0.20:5432/postgres"
 }

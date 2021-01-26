@@ -4,6 +4,7 @@ import requests
 import numpy as np
 import pandas as pd
 import math
+import sqlalchemy
 
 
 class Trader:
@@ -55,17 +56,27 @@ class Trader:
                             headers=self.HEADERS)
 
 
-def main():
+def get_bar_data(tickers):
     trader = Trader("config.json")
-    bars = trader.get_mkt_data('AAPL', 1000, '2019-01-01', '1D')
+    config = json.load(open("config.json"))
 
-    df = pd.DataFrame.from_dict(bars.json()['AAPL'])
-    df.columns = ['epoch', 'open', 'high', 'low', 'close', 'vol']
-    df.to_csv('test_data_aapl.csv')
-    df['epoch'] = df['epoch'].apply(lambda t: datetime.datetime.fromtimestamp(t))
-    df['avg'] = round((df['high'] + df['low']) / 2, 2)
-    df['vol_diff'] = df['vol'].diff()
-    df.to_csv('test_data_aapl.csv')
+    for ticker in tickers:
+        bars = trader.get_mkt_data(ticker, 1000, '2019-01-01', '1D')
+
+        df = pd.DataFrame.from_dict(bars.json()[ticker])
+        df.columns = ['epoch', 'open', 'high', 'low', 'close', 'vol']
+        df['epoch'] = df['epoch'].apply(lambda t: datetime.datetime.fromtimestamp(t))
+        df['avg'] = round((df['high'] + df['low']) / 2, 2)
+        df['vol_diff'] = df['vol'].diff()
+
+        conn = sqlalchemy.create_engine(config["db_connection_string"])
+
+        df.to_sql(ticker, schema="bar_data", con=conn)
+
+
+def main():
+    tickers = ["TWTR"]
+    get_bar_data(tickers)
 
 
 if __name__ == "__main__":
