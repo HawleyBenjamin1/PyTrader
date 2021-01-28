@@ -83,7 +83,7 @@ def update_positions():
     df.to_sql("open_positions", schema="portfolio", con=conn)
 
 
-# TODO: Collect stock price history and alternative data related to stocks. Predict stock price using alternative data.
+# TODO: Access Twitter API
 def main():
     update_positions()
 
