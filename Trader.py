@@ -56,12 +56,12 @@ class Trader:
                             headers=self.HEADERS)
 
 
-def get_bar_data(tickers):
+def get_bar_data(tickers, max_bars, after_date):
     trader = Trader("config.json")
     config = json.load(open("config.json"))
 
     for ticker in tickers:
-        bars = trader.get_mkt_data(ticker, 1000, '2019-01-01', '1D')
+        bars = trader.get_mkt_data(ticker, max_bars, after_date, '1D')
 
         df = pd.DataFrame.from_dict(bars.json()[ticker])
         df.columns = ['epoch', 'open', 'high', 'low', 'close', 'vol']
@@ -83,6 +83,7 @@ def update_positions():
     df.to_sql("open_positions", schema="portfolio", con=conn)
 
 
+# TODO: Collect stock price history and alternative data related to stocks. Predict stock price using alternative data.
 def main():
     update_positions()
 

@@ -10,5 +10,8 @@
    "positions_endpoint":"/v2/positions",
    "base_mkt_data_url":"https://data.alpaca.markets",
    "bars_endpoint":"/v1/bars",
-   "db_connection_string": "postgresql://postgres@192.168.0.20:5432/postgres"
+   "db_connection_string": "postgresql://postgres@192.168.0.20:5432/postgres",
+   "twitter_api_key": "f5oLN3RSyI1q8w7dUrjCPt7xV",
+   "twitter_secret_key": "gQ3uumkL1hbYhrUna8e0aw6GUN2l7kM1uKWBck0Su3BOTS9679",
+   "twitter_bearer_token": "AAAAAAAAAAAAAAAAAAAAAL%2FSMAEAAAAAknvUzr4Gbu73XeKMSJ%2BOQpTygKE%3DxD3xrnf3pVQS0TS1fRHed8vgpYb8jsln0KqRNcbfZlP9oQIpcU"
 }
