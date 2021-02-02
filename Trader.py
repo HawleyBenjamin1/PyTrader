@@ -13,10 +13,11 @@ class Trader:
             self.CONFIG = json.load(f)
         self.HEADERS = {'APCA-API-KEY-ID': self.CONFIG["api_key_id"], "APCA-API-SECRET-KEY": self.CONFIG["secret_key"]}
         self.BASE_PAPER_URL = self.CONFIG["base_paper_url"]
+        self.BASE_URL = self.CONFIG["base_url"]
         self.BASE_MKT_DATA_URL = self.CONFIG["base_mkt_data_url"]
 
     def get_account(self):
-        return requests.get(self.CONFIG["base_paper_url"] + self.CONFIG["account_endpoint"], headers=self.HEADERS)
+        return requests.get(self.BASE_URL + self.CONFIG["account_endpoint"], headers=self.HEADERS)
 
     def create_order(self, symbol, qty, side, order_type, time_in_force):
         DATA = {
@@ -26,13 +27,13 @@ class Trader:
             "type": order_type,
             "time_in_force": time_in_force
         }
-        return requests.post(self.BASE_PAPER_URL + self.CONFIG["orders_endpoint"], json=DATA, headers=self.HEADERS)
+        return requests.post(self.BASE_URL + self.CONFIG["orders_endpoint"], json=DATA, headers=self.HEADERS)
 
     def get_positions(self):
-        return requests.get(self.BASE_PAPER_URL + self.CONFIG["positions_endpoint"], headers=self.HEADERS)
+        return requests.get(self.BASE_URL + self.CONFIG["positions_endpoint"], headers=self.HEADERS)
 
     def get_assets(self):
-        return requests.get(self.BASE_PAPER_URL + self.CONFIG["assets_endpoint"], headers=self.HEADERS)
+        return requests.get(self.BASE_URL + self.CONFIG["assets_endpoint"], headers=self.HEADERS)
 
     # No more than 200 symbols allowed
     # Limit: max number of bars for each symbol between 1 and 1000, default: 100
@@ -56,7 +57,7 @@ class Trader:
                             headers=self.HEADERS)
 
 
-def get_bar_data(tickers, max_bars, after_date):
+def get_bar_data(tickers, max_bars, after_date="2019-01-01"):
     trader = Trader("config.json")
     config = json.load(open("config.json"))
 
@@ -81,11 +82,19 @@ def update_positions():
 
     conn = sqlalchemy.create_engine(config["db_connection_string"])
     df.to_sql("open_positions", schema="portfolio", con=conn)
+    return df
 
 
-# TODO: Access Twitter API
+# TODO: Create trading strategy
 def main():
-    update_positions()
+    positions = update_positions()
+    get_bar_data(tickers=["TWTR", "AAPL", "AMZN", "TSLA"], max_bars=1000)
+
+    trader = Trader("config.json")
+    account_dict = trader.get_account().json()
+
+    # TODO: Check for positions to sell
+    # TODO: Check for positions to buy
 
 
 if __name__ == "__main__":
