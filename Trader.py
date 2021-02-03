@@ -72,7 +72,7 @@ def get_bar_data(tickers, max_bars, after_date="2019-01-01"):
 
         conn = sqlalchemy.create_engine(config["db_connection_string"])
 
-        df.to_sql(ticker, schema="bar_data", con=conn)
+        df.to_sql(ticker, schema="bar_data", con=conn, if_exists="append")
 
 
 def update_positions():
@@ -81,19 +81,24 @@ def update_positions():
     df = pd.read_json(trader.get_positions().text)
 
     conn = sqlalchemy.create_engine(config["db_connection_string"])
-    df.to_sql("open_positions", schema="portfolio", con=conn)
+    df.to_sql("open_positions", schema="portfolio", con=conn, if_exists="replace")
     return df
 
 
 # TODO: Create trading strategy
 def main():
-    positions = update_positions()
-    get_bar_data(tickers=["TWTR", "AAPL", "AMZN", "TSLA"], max_bars=1000)
+    config = json.load(open("config.json"))
+    # positions = update_positions()
+    # get_bar_data(tickers=["TWTR", "AAPL", "AMZN", "TSLA"], max_bars=1000)
 
     trader = Trader("config.json")
     account_dict = trader.get_account().json()
 
     # TODO: Check for positions to sell
+    conn = sqlalchemy.create_engine(config["db_connection_string"])
+    twtr = pd.read_sql_table(con=conn, table_name="TWTR", schema="bar_data", index_col="index")
+    breakpoint()
+
     # TODO: Check for positions to buy
 
 
