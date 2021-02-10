@@ -67,13 +67,14 @@ def get_bar_data(tickers, max_bars, after_date="2019-01-01"):
 
         df = pd.DataFrame.from_dict(bars.json()[ticker])
         df.columns = ['epoch', 'open', 'high', 'low', 'close', 'vol']
+        df.insert(0, 'ticker', ticker)
         df['epoch'] = df['epoch'].apply(lambda t: datetime.datetime.fromtimestamp(t))
         df['avg'] = round((df['high'] + df['low']) / 2, 2)
         df['vol_diff'] = df['vol'].diff()
 
         conn = sqlalchemy.create_engine(config["db_connection_string"])
 
-        df.to_sql(ticker, schema="bar_data", con=conn, if_exists="replace")
+        df.to_sql("bar_data", schema="bar_data", con=conn, if_exists="append")
 
 
 def update_positions():
@@ -85,37 +86,52 @@ def update_positions():
     df.to_sql("open_positions", schema="portfolio", con=conn, if_exists="replace")
     return df
 
-
-def sellable(unrealized_plpc):
+# Return true if PL leaves acceptable range
+def is_sell(unrealized_plpc):
     if unrealized_plpc > .05 or unrealized_plpc < -.05:
         return True
     else:
         return False
 
 
+# Return true if ticker is expected to increase in value
+# ticker is a dataframe with bar data
+def is_buy(ticker):
+    past_week = ticker.head(7)
+    past_month = ticker.head(30)
+    if past_week["avg"].mean() > (past_month["avg"].mean() + past_month["avg"].std()):
+        return True
+    elif past_week["avg"].mean() < (past_month["avg"].mean() - past_month["avg"].std()):
+        return True
+    else:
+        return False
+    
+
 # TODO: Create trading strategy
 def main():
     config = json.load(open("config.json"))
     positions = update_positions()
-    # get_bar_data(tickers=["TWTR"], max_bars=1000)
+    tickers = ["TWTR"]
+    # get_bar_data(tickers, max_bars=1000)
 
     trader = Trader("config.json")
     account_dict = trader.get_account().json()
 
-    conn = sqlalchemy.create_engine(config["db_connection_string"])
-    twtr = pd.read_sql_table(con=conn, table_name="TWTR", schema="bar_data", index_col="index")
-
     # TODO: Check for positions to sell
     sell_positions = positions.apply(lambda x:
                                      [x["symbol"], x["qty"], "sell"]
-                                     if sellable(x["unrealized_plpc"]) else [x["symbol"], x["qty"], "hold"], axis=1)
+                                     if is_sell(x["unrealized_plpc"]) else [x["symbol"], x["qty"], "hold"], axis=1)
 
-    order_response = sell_positions.apply(lambda x:
+    sell_order_response = sell_positions.apply(lambda x:
                                           trader.create_order(x[0], x[1], "sell", "mkt", "gtc").text
                                           if x[2] is "sell" else x[0] + ": hold")
-    print(order_response)
+    print(sell_order_response)
 
     # TODO: Check for positions to buy
+    conn = sqlalchemy.create_engine(config["db_connection_string"])
+    bar_data = pd.read_sql_table(con=conn, table_name="bar_data", schema="bar_data", index_col="index")
+    buy_positions = bar_data.groupby(bar_data.ticker).apply(lambda ticker: is_buy(ticker))
+    print(buy_positions)
 
 
 if __name__ == "__main__":
